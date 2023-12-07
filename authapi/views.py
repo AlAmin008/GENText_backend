@@ -4,14 +4,24 @@ from rest_framework.views import APIView
 from authapi.serializers import SaveNewPasswordSerializer, UserRegistrationSerializer,UserLoginSerializer,UserProfileSerializer, ChangePasswordSerializer, SendResetEmailSerializer, ConfirmOTPSerializer, RequestNewOTPSerializer
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.permissions import IsAuthenticated
 from authapi.models import User
 from django.core.mail import send_mail
 from django.conf import settings
 from datetime import datetime,timedelta, timezone
+import requests
 
 import string, random
 
+
+def get_new_access_token(refresh_token):
+    try:
+        refresh_token = RefreshToken(refresh_token)
+        new_access_token = str(refresh_token.access_token)
+        return new_access_token
+    except:
+        return None
 
 def sent_mail_to_user(otp,email):
     subject ="GENText Reistration OTP"
@@ -23,8 +33,10 @@ def sent_mail_to_user(otp,email):
 #generating OTP
 def generate_otp(length=6):
     characters = string.digits
-    otp = ''.join(random.choice(characters) for _ in range(length))
-    return otp
+    while True:
+        otp = ''.join(random.choice(characters) for _ in range(length))
+        if otp[0]!= 0:
+            return otp
 
 #generating Manual Token
 def get_tokens_for_user(user):
@@ -98,12 +110,19 @@ class UserLoginView(APIView):
                 return Response({"errors":{'non_field_errors':['Email or Password is not valid']}},status=status.HTTP_404_NOT_FOUND)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
+from rest_framework_simplejwt.views import TokenObtainPairView
+
 class UserProfileView(APIView):
-    # renderer_classes=[UserRenderer]
-    permission_classes=[IsAuthenticated]
-    def get(self,request):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
         serializer = UserProfileSerializer(request.user)
-        return Response(serializer.data,status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+            
+
+
 
 class ChangePasswordView(APIView):
     # renderer_classes =[UserRenderer]
