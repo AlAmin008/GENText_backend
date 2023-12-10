@@ -22,6 +22,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/user/",include("authapi.urls")),
     path("api/ocr/",include("ocrapi.urls")),
+    path('api/file/',include("fileapi.urls")),
     path('api/token/refresh/',TokenRefreshView.as_view(),name='refresh-token')
-
 ]

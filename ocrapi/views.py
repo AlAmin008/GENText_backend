@@ -112,7 +112,7 @@ def store_file(file_obj):
 
                 # adding file in database 
 
-    user_instance = User.objects.get(id=25)
+    user_instance = User.objects.get(id=26)
     print(file_path)  
     pdf_file_instance = PdfFiles(
     pdf_file_name= file_name,
@@ -120,7 +120,7 @@ def store_file(file_obj):
     total_size= 0,
     file_location= file_path,
     uploaded_by=user_instance,
-    uploaded_date=datetime.now(),
+    uploaded_date=datetime.now().date(),
     upload_status='pending',
     )
     #Save the instance to the database

@@ -4,13 +4,11 @@ from rest_framework.views import APIView
 from authapi.serializers import SaveNewPasswordSerializer, UserRegistrationSerializer,UserLoginSerializer,UserProfileSerializer, ChangePasswordSerializer, SendResetEmailSerializer, ConfirmOTPSerializer, RequestNewOTPSerializer
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.permissions import IsAuthenticated
 from authapi.models import User
 from django.core.mail import send_mail
 from django.conf import settings
 from datetime import datetime,timedelta, timezone
-import requests
 
 import string, random
 
@@ -110,7 +108,6 @@ class UserLoginView(APIView):
                 return Response({"errors":{'non_field_errors':['Email or Password is not valid']}},status=status.HTTP_404_NOT_FOUND)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
-from rest_framework_simplejwt.views import TokenObtainPairView
 
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -119,7 +116,52 @@ class UserProfileView(APIView):
         serializer = UserProfileSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+# from datetime import datetime
+# from rest_framework_simplejwt.tokens import AccessToken
 
+# def is_access_token_expired(access_token):
+#     """
+#     Check if the provided access token has expired.
+
+#     Parameters:
+#     - access_token (str): The access token to check.
+
+#     Returns:
+#     - bool: True if the token has expired, False otherwise.
+#     """
+#     try:
+#         token = AccessToken(access_token)
+#         expiration_time = token.payload.get('exp', 0)
+#         current_time = datetime.utcnow().timestamp()
+#         return current_time > expiration_time
+#     except Exception as e:
+#         # Handle exceptions, such as an invalid token format
+#         print(f"Error checking token expiration: {str(e)}")
+#         return True  # Treat as expired if an error occurs
+
+# Example usage:
+
+
+
+# class UserProfileView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+    
+    
+#     def get(self, request):
+#         access_token = request.data.get('access_token')
+#         if is_access_token_expired(access_token):
+#             print("Access token has expired.")
+#             refresh_token = request.data.get('refresh_token')
+#             refresh_token = RefreshToken(refresh_token)    
+#             access_token = str(refresh_token.access_token) 
+#             print(access_token)
+#         else:
+#             print("Access token is still valid.")
+        
+#         return Response({"msg":"Done"}, status=status.HTTP_200_OK)  
+    
+        
             
 
 
@@ -150,3 +192,5 @@ class SaveNewPasswordView(APIView):
         serializer = SaveNewPasswordSerializer(data=request.data,context ={'uid':uid,'token':token}) 
         if serializer.is_valid(raise_exception=True):
             return Response({"msg":"Password Reset Successfully"},status=status.HTTP_201_CREATED)          
+        
+        
