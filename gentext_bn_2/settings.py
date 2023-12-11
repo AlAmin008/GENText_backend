@@ -155,7 +155,8 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = "arman.tappware@gmail.com"
 EMAIL_HOST_PASSWORD ="getnqhfyhkontvdt"
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',  # Replace with the actual origin of your React app
+    'http://localhost:3000',
+    'http://localhost:3011',# Replace with the actual origin of your React app
     'http://192.168.10.141',  # Add the IP address of your other laptop
     # Add other allowed origins as needed
 ]

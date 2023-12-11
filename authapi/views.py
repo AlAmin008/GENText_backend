@@ -22,8 +22,8 @@ def get_new_access_token(refresh_token):
         return None
 
 def sent_mail_to_user(otp,email):
-    subject ="GENText Reistration OTP"
-    message = f"Please Use is OTP to complete your registration process {otp}"
+    subject ="GENText Registration OTP"
+    message = f"Please Use this OTP to complete your registration process {otp}"
     from_email= settings.EMAIL_HOST_USER
     recipient = [email]
     send_mail(subject=subject,message=message,from_email=from_email,recipient_list=recipient)
@@ -56,7 +56,7 @@ class UserRegistrationView(APIView):
             user=serializer.save()
             sent_mail_to_user(OTP,serializer.data.get('email'))
             # token = get_tokens_for_user(user)
-            return Response({"msg":"Please Check Your Email. An OTP is Sent To Confirm Your Registration."},status=status.HTTP_201_CREATED)
+            return Response({"msg":"Please Check Your Email. An OTP is Sent To Confirm Your Registration."},status=status.HTTP_200_OK)
     
 class ConfirmOTPView(APIView):
     def post(self,request):
@@ -66,7 +66,7 @@ class ConfirmOTPView(APIView):
             try:
                 user = User.objects.get(email=email)
             except User.DoesNotExist:
-                return Response({"msg":"User Not Registered"},status=status.HTTP_404_NOT_FOUND) 
+                return Response({"msg":"User Not Registered"},status=status.HTTP_401_UNAUTHORIZED) 
             OTP = serializer.data.get('OTP')  
             print(type(OTP))
             print((user.OTP_generation_time - datetime.now(timezone.utc)))
@@ -74,24 +74,22 @@ class ConfirmOTPView(APIView):
                 user.is_active = 1
                 user.save()
                 return Response({"msg":"Registration Successful"},status=status.HTTP_201_CREATED) 
-            return Response({"msg":"Incorrect OTP or Expired"},status=status.HTTP_404_NOT_FOUND) 
-        # return Response(serializer.errors,status=status.HTTP_404_NOT_FOUND) 
+            return Response({"msg":"Incorrect OTP or Expired"},status=status.HTTP_401_UNAUTHORIZED) 
 
 class RequestNewOTPView(APIView):
     def post(self,request):
         serializer = RequestNewOTPSerializer(data=request.data)
-        if serializer.is_valid():
+        if serializer.is_valid(raise_exception=True):
                 email = serializer.data.get('email')
                 try:
                     user = User.objects.get(email=email)
                 except User.DoesNotExist:
-                    return Response({"msg":"User Not Registered"},status=status.HTTP_404_NOT_FOUND) 
+                    return Response({"msg":"User Not Registered"},status=status.HTTP_401_UNAUTHORIZED) 
                 OTP = generate_otp() 
                 user.OTP = OTP
                 user.OTP_generation_time = datetime.now()
                 user.save()
                 return Response({"msg":"A new OTP sent to your email. Please Check!"},status=status.HTTP_200_OK) 
-        return Response(serializer.errors,status=status.HTTP_404_NOT_FOUND)   
     
 class UserLoginView(APIView):
     # renderer_classes=[UserRenderer]
@@ -105,8 +103,7 @@ class UserLoginView(APIView):
                 token = get_tokens_for_user(user)
                 return Response({"token":token,"msg":"Login Successful"},status=status.HTTP_200_OK)
             else:    
-                return Response({"errors":{'non_field_errors':['Email or Password is not valid']}},status=status.HTTP_404_NOT_FOUND)
-        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+                return Response({"errors":"Email or Password is not valid"},status=status.HTTP_401_UNAUTHORIZED)
 
 
 class UserProfileView(APIView):
@@ -175,7 +172,7 @@ class ChangePasswordView(APIView):
         print(serializer.is_valid())
         if serializer.is_valid(raise_exception=True):
             return Response({"msg":"Password Changed Successful"},status=status.HTTP_201_CREATED)
-        return Response(serializer.errors,status=status.HTTP_404_BAD_REQUEST)
+        return Response(serializer.errors,status=status.HTTP_401_UNAUTHORIZED)
         
 class ResetPasswordEmailView(APIView):
     # renderer_classes =[UserRenderer]
