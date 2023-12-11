@@ -14,7 +14,7 @@ def sent_mail_to_user(email,subject,message):
     send_mail(subject=subject,message=message,from_email=from_email,recipient_list=recipient)
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    password2= serializers.CharField(style={'input_type':'password'},write_only=True)
+    confirm_password= serializers.CharField(style={'input_type':'password'},write_only=True)
     class Meta:
         model = User
         fields = '__all__'
@@ -24,9 +24,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
     def validate(self,data):
         password = data.get('password')
-        password2 = data.get('password2')
+        confirm_password = data.get('confirm_password')
         
-        if password != password2:
+        if password != confirm_password:
             raise serializers.ValidationError("Password and Confirm Password doesn't match")
 
         return data
@@ -53,9 +53,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields=['id','name','email']
 
 class ChangePasswordSerializer(serializers.Serializer):
-    current_password = serializers.CharField(max_length=255, min_length=6, write_only=True, style={'input_type': 'password'})
-    new_password = serializers.CharField(max_length=255, min_length=6, write_only=True, style={'input_type': 'password'})
-    confirm_password = serializers.CharField(max_length=255,min_length=6,write_only=True, style={'input_type':'password'})
+    current_password = serializers.CharField(max_length=50, min_length=8, write_only=True, style={'input_type': 'password'})
+    new_password = serializers.CharField(max_length=50, min_length=8, write_only=True, style={'input_type': 'password'})
+    confirm_password = serializers.CharField(max_length=50,min_length=8,write_only=True, style={'input_type':'password'})
 
     class Meta:
         fields = ['current_password', 'new_password','confirm_password']
@@ -99,8 +99,8 @@ class SendResetEmailSerializer(serializers.Serializer):
             raise serializers.ValidationError('You are not a registered user')
         
 class SaveNewPasswordSerializer(serializers.Serializer):
-    new_password = serializers.CharField(max_length=255, min_length=6, write_only=True, style={'input_type': 'password'})
-    new_password2 = serializers.CharField(max_length=255, min_length=6, write_only=True, style={'input_type': 'password'})
+    new_password = serializers.CharField(max_length=50, min_length=8, write_only=True, style={'input_type': 'password'})
+    new_password2 = serializers.CharField(max_length=50, min_length=8, write_only=True, style={'input_type': 'password'})
 
     class Meta:
         fields = ['current_password', 'new_password']

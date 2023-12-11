@@ -22,7 +22,7 @@ class UploadedFilesView(APIView):
         files = PdfFiles.objects.filter(uploaded_by=uid)
         serializer = UploadedFilesSerializer(files,many=True)
         if not files:
-            return Response({"msg":"No File Uploaded Yet"},status=status.HTTP_404_NOT_FOUND)
+            return Response({"msg":"No File Uploaded Yet"},status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class UploadedFileDetailView(APIView):
@@ -32,7 +32,7 @@ class UploadedFileDetailView(APIView):
         info = PdfDetails.objects.filter(pdf_file_id=file_id)
         serializer = UploadedFileDetailSerializer(info,many=True)
         if not info:
-            return Response({"msg":"Unable to fetch data"},status=status.HTTP_404_NOT_FOUND)
+            return Response({"msg":"Unable to fetch data"},status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 class RecentUploadedFilesView(APIView):
@@ -42,7 +42,7 @@ class RecentUploadedFilesView(APIView):
         files = PdfFiles.objects.filter(uploaded_by=uid).order_by('-uploaded_date').values()[:5]
         serializer = UploadedFilesSerializer(files,many=True)
         if not files:
-            return Response({"msg":"No File Uploaded Yet"},status=status.HTTP_404_NOT_FOUND)
+            return Response({"msg":"No File Uploaded Yet"},status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.data, status=status.HTTP_200_OK)
 class DashBoardView(APIView):
     permission_classes = [IsAuthenticated]
