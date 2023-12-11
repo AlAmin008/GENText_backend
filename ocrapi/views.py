@@ -3,8 +3,6 @@ from rest_framework.response import Response
 from rest_framework import status
 import cv2
 import pytesseract
-from langdetect import detect_langs
-from django.http import JsonResponse
 from ocrapi.models import PdfFiles,PdfDetails
 from authapi.models import User
 import fitz
@@ -13,15 +11,11 @@ import os
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser
 from datetime import datetime
-import string, random
 
-#generating random number to differentiate between same named files
-def generate_random(length=4):
-    characters = string.digits
-    value = ''.join(random.choice(characters) for _ in range(length))
-    return value
 
-#exxtracting text from image
+
+
+#extracting text from image
 def text_extraction(image):
     image_path = image
     img = cv2.imread(image_path)
@@ -37,12 +31,12 @@ def text_extraction(image):
     
     return txt
 
-def pdf2image(file_path,pdf_file_instance,file_name):
+def pdf2image(file_path,pdf_file_instance,file_name,user_name):
 
+    incomplete = False
     # Open the PDF file
     pdf_document = fitz.open(file_path)
-    total_size = os.path.getsize(file_path)
-    total_size = round (total_size/1024,2)
+  
 
     total_page = 0
     # Loop through each page in the PDF
@@ -57,7 +51,6 @@ def pdf2image(file_path,pdf_file_instance,file_name):
         pil_image = Image.frombytes("RGB", [image.width, image.height], image.samples)
 
         
-        user_name= "Al-Amin"
         folder_path = os.path.join(settings.BASE_DIR, f"media\{user_name}\{file_name}\pdf_Image")
 
         # Ensure the folder exists, create it if necessary
@@ -68,10 +61,12 @@ def pdf2image(file_path,pdf_file_instance,file_name):
         image_filename = os.path.join(folder_path, f"page_{page_number+1}.jpg")
         pil_image.save(image_filename)
 
-        print(image_filename)
         # print(folder_path)
         
         result = text_extraction(image_filename)
+       
+        if not result:
+            incomplete = True
 
         file_instance = pdf_file_instance
 
@@ -81,24 +76,23 @@ def pdf2image(file_path,pdf_file_instance,file_name):
         image_location = image_filename,
         text = result
         )
-        print(image_filename)
         pdf_details_instance.save()
 
     # Close the PDF document
+    
     pdf_document.close()
     pdf_file_instance.total_page = total_page
-    pdf_file_instance.total_size = total_size
-    pdf_file_instance.upload_status = 'complete'
+    if incomplete:
+        pdf_file_instance.upload_status = 'incomplete'
+    else:
+        pdf_file_instance.upload_status = 'complete'
     pdf_file_instance.save()
     
 
-def store_file(file_obj):
-    user_name= "Al-Amin"
-    garbage = generate_random()
-    # Construct the complete file path with the folder
-    file_name = f"{garbage}#{file_obj.name}"
+def store_file(file_obj,file_name,user_instance):
+    
 
-    folder_path = os.path.join(settings.BASE_DIR, f"media\{user_name}\{file_name}")
+    folder_path = os.path.join(settings.BASE_DIR, f"media\{user_instance.name}\{file_name}")
     # Ensure the folder exists, create it if necessary
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
@@ -109,45 +103,63 @@ def store_file(file_obj):
         for chunk in file_obj.chunks():
             destination_file.write(chunk)
                 
-
-                # adding file in database 
-
-    user_instance = User.objects.get(id=25)
-    print(file_path)  
+    total_size = os.path.getsize(file_path)
+    total_size = round (total_size/1024,2)
+    # adding file in database 
+      
     pdf_file_instance = PdfFiles(
     pdf_file_name= file_name,
     total_page = 0,
-    total_size= 0,
+    total_size=total_size,
     file_location= file_path,
     uploaded_by=user_instance,
-    uploaded_date=datetime.now(),
+    uploaded_date=datetime.now().date(),
     upload_status='pending',
     )
     #Save the instance to the database
     pdf_file_instance.save()
     return {"file_path":file_path,"file_name":file_name,"pdf_file_instance":pdf_file_instance}
+
+
 # Create your views here.
-
-
-
 
 
 class UploadFileView(APIView):
 
     parser_classes = (MultiPartParser,)
 
-    def post(self, request, *args, **kwargs):
-        print(request.FILES)
+    def post(self, request,uid, *args, **kwargs):
         file_obj = request.FILES.get('file')
-
         if file_obj:
             if file_obj.name.lower().endswith(".pdf"):
-                obj = store_file(file_obj)
-                # text extraction and saving
-                pdf2image(obj["file_path"],obj["pdf_file_instance"],obj["file_name"])
+                #get file info 
+                result = PdfFiles.objects.filter(pdf_file_name = file_obj.name)
+                if result:
+                    return Response({'msg': 'A file with the same name exist',"file_name":file_obj.name,"similar_file":len(result)}, status=status.HTTP_200_OK)
+                user_instance = User.objects.get(id=26)
+                user_name = user_instance.name
+                obj = store_file(file_obj,file_obj.name,user_instance)
+                pdf2image(obj["file_path"],obj["pdf_file_instance"],obj["file_name"],user_instance.name)
 
                 return Response({'msg': 'File successfully Stored'}, status=status.HTTP_200_OK)
             else:
                 return Response({'msg': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
         else:
-                return Response({'msg': 'file doesn\'t exist'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'msg': 'file doesn\'t exist'}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+class UploadSimilarNamedFileView(APIView):
+    parser_classes = (MultiPartParser,)
+
+    def post(self, request,uid, *args, **kwargs):
+        file_obj = request.FILES.get('file')
+
+        if file_obj:
+            if file_obj.name.lower().endswith(".pdf"):
+                obj = store_file(file_obj,file_obj.name)
+                pdf2image(obj["file_path"],obj["pdf_file_instance"],obj["file_name"])
+                return Response({'msg': 'File successfully Stored'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'msg': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'msg': 'file doesn\'t exist'}, status=status.HTTP_400_BAD_REQUEST)

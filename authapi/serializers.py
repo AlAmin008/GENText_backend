@@ -8,7 +8,6 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import send_mail
 from django.conf import settings
 
-
 def sent_mail_to_user(email,subject,message):
     from_email= settings.EMAIL_HOST_USER
     recipient = [email]
@@ -34,6 +33,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
     def create(self,validate_data):
         return User.objects.create_user(**validate_data)
+
 class ConfirmOTPSerializer(serializers.Serializer):
     OTP = serializers.CharField(max_length=6,min_length=6) 
     email = serializers.EmailField(max_length=255)
@@ -50,8 +50,7 @@ class UserLoginSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields='__all__'
-
+        fields=['id','name','email']
 
 class ChangePasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField(max_length=255, min_length=6, write_only=True, style={'input_type': 'password'})
@@ -75,9 +74,7 @@ class ChangePasswordSerializer(serializers.Serializer):
             user.save()
             return attrs
         raise serializers.ValidationError("New passwords doesn't match")
-
-        
-
+      
 class SendResetEmailSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=255)
     class Meta:

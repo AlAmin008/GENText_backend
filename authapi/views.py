@@ -13,6 +13,14 @@ from datetime import datetime,timedelta, timezone
 import string, random
 
 
+def get_new_access_token(refresh_token):
+    try:
+        refresh_token = RefreshToken(refresh_token)
+        new_access_token = str(refresh_token.access_token)
+        return new_access_token
+    except:
+        return None
+
 def sent_mail_to_user(otp,email):
     subject ="GENText Reistration OTP"
     message = f"Please Use is OTP to complete your registration process {otp}"
@@ -23,8 +31,10 @@ def sent_mail_to_user(otp,email):
 #generating OTP
 def generate_otp(length=6):
     characters = string.digits
-    otp = ''.join(random.choice(characters) for _ in range(length))
-    return otp
+    while True:
+        otp = ''.join(random.choice(characters) for _ in range(length))
+        if otp[0]!= 0:
+            return otp
 
 #generating Manual Token
 def get_tokens_for_user(user):
@@ -98,12 +108,63 @@ class UserLoginView(APIView):
                 return Response({"errors":{'non_field_errors':['Email or Password is not valid']}},status=status.HTTP_404_NOT_FOUND)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
+
 class UserProfileView(APIView):
-    # renderer_classes=[UserRenderer]
-    permission_classes=[IsAuthenticated]
-    def get(self,request):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
         serializer = UserProfileSerializer(request.user)
-        return Response(serializer.data,status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+# from datetime import datetime
+# from rest_framework_simplejwt.tokens import AccessToken
+
+# def is_access_token_expired(access_token):
+#     """
+#     Check if the provided access token has expired.
+
+#     Parameters:
+#     - access_token (str): The access token to check.
+
+#     Returns:
+#     - bool: True if the token has expired, False otherwise.
+#     """
+#     try:
+#         token = AccessToken(access_token)
+#         expiration_time = token.payload.get('exp', 0)
+#         current_time = datetime.utcnow().timestamp()
+#         return current_time > expiration_time
+#     except Exception as e:
+#         # Handle exceptions, such as an invalid token format
+#         print(f"Error checking token expiration: {str(e)}")
+#         return True  # Treat as expired if an error occurs
+
+# Example usage:
+
+
+
+# class UserProfileView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+    
+    
+#     def get(self, request):
+#         access_token = request.data.get('access_token')
+#         if is_access_token_expired(access_token):
+#             print("Access token has expired.")
+#             refresh_token = request.data.get('refresh_token')
+#             refresh_token = RefreshToken(refresh_token)    
+#             access_token = str(refresh_token.access_token) 
+#             print(access_token)
+#         else:
+#             print("Access token is still valid.")
+        
+#         return Response({"msg":"Done"}, status=status.HTTP_200_OK)  
+    
+        
+            
+
+
 
 class ChangePasswordView(APIView):
     # renderer_classes =[UserRenderer]
@@ -131,3 +192,5 @@ class SaveNewPasswordView(APIView):
         serializer = SaveNewPasswordSerializer(data=request.data,context ={'uid':uid,'token':token}) 
         if serializer.is_valid(raise_exception=True):
             return Response({"msg":"Password Reset Successfully"},status=status.HTTP_201_CREATED)          
+        
+        

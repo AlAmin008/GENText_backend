@@ -15,7 +15,7 @@ class PdfFiles(models.Model):
     total_size = models.FloatField(null=True)
     file_location = models.CharField(max_length=300,null=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
-    uploaded_date = models.DateTimeField(auto_now_add=True)
+    uploaded_date = models.DateField(auto_now_add=True)
     upload_status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     meta_data = models.TextField( null=True)
     remarks = models.TextField(null=True)
