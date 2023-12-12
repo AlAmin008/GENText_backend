@@ -88,7 +88,7 @@ class SendResetEmailSerializer(serializers.Serializer):
             print('Encoded UID', uid)
             token = PasswordResetTokenGenerator().make_token(user)
             print('Password Reset Token', token)
-            link = 'http://localhost:3000/api/user/reset/'+uid+'/'+token
+            link = 'http://localhost:3011/metronic8/react/demo1/auth/reset-password/api/user/reset/'+uid+'/'+token
             print('Password Reset Link ',link)
             # send email
             subject ="GENText Reset Password Link"
@@ -100,19 +100,19 @@ class SendResetEmailSerializer(serializers.Serializer):
         
 class SaveNewPasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(max_length=50, min_length=8, write_only=True, style={'input_type': 'password'})
-    new_password2 = serializers.CharField(max_length=50, min_length=8, write_only=True, style={'input_type': 'password'})
+    confirm_password = serializers.CharField(max_length=50, min_length=8, write_only=True, style={'input_type': 'password'})
 
     class Meta:
         fields = ['current_password', 'new_password']
 
     def validate(self, attrs):
         new_password = attrs.get('new_password')
-        new_password2 = attrs.get('new_password2')
+        confirm_password = attrs.get('confirm_password')
         uid = self.context.get('uid')
         token =self.context.get('token')
 
 
-        if new_password !=new_password2 :
+        if new_password !=confirm_password:
             raise serializers.ValidationError("Password and Confirm Password doesn't match")
 
         id = smart_str(urlsafe_base64_decode(uid))

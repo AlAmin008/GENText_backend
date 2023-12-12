@@ -172,7 +172,7 @@ class ChangePasswordView(APIView):
         print(serializer.is_valid())
         if serializer.is_valid(raise_exception=True):
             return Response({"msg":"Password Changed Successful"},status=status.HTTP_201_CREATED)
-        return Response(serializer.errors,status=status.HTTP_401_UNAUTHORIZED)
+        # return Response(serializer.errors,status=status.HTTP_401_UNAUTHORIZED)
         
 class ResetPasswordEmailView(APIView):
     # renderer_classes =[UserRenderer]
