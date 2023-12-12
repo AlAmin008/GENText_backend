@@ -23,11 +23,14 @@ def text_extraction(image):
     # Convert image to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+    #Binarize
+    thresh,im_bw=cv2.threshold(gray,200,230,cv2.THRESH_BINARY)
+
     # Configuration for Bengali language
     custom_config = r'-l eng+ben --psm 6'
 
     # Perform OCR
-    txt = pytesseract.image_to_string(gray, config=custom_config)
+    txt = pytesseract.image_to_string(im_bw, config=custom_config)
     
     return txt
 
@@ -91,7 +94,6 @@ def pdf2image(file_path,pdf_file_instance,file_name,user_name):
 
 def store_file(file_obj,file_name,user_instance):
     
-
     folder_path = os.path.join(settings.BASE_DIR, f"media\{user_instance.name}\{file_name}")
     # Ensure the folder exists, create it if necessary
     if not os.path.exists(folder_path):
