@@ -64,6 +64,20 @@ def pdf2image(file_path,pdf_file_instance,file_name,user_name):
         image_filename = os.path.join(folder_path, f"page_{page_number+1}.jpg")
         pil_image.save(image_filename)
 
+        #Reducing DPI
+        target_DPI = 25
+        img = Image.open(image_filename)
+        current_dpi = img.info.get("dpi", (72, 72))
+        scale_factor = target_DPI / current_dpi[0]
+        new_size = tuple(int(dim * scale_factor) for dim in img.size)
+        resized_img_dpi = img.resize(new_size)
+        # resized_img_dpi.save(name,format="JPEG",dpi=(target_DPI,target_DPI))
+
+        # Reduce BPP
+        img_8bit = resized_img_dpi.convert("P", palette=Image.ADAPTIVE, colors=256)
+        img_rgb = img_8bit.convert("RGB")
+        img_rgb.save(image_filename,format="JPEG", dpi = (target_DPI,target_DPI))
+
         # print(folder_path)
         
         result = text_extraction(image_filename)
