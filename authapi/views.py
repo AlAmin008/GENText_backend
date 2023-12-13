@@ -54,7 +54,9 @@ class UserRegistrationView(APIView):
             OTP = generate_otp()
             serializer.validated_data['OTP'] = OTP
             user=serializer.save()
-            sent_mail_to_user(OTP,serializer.data.get('email'))
+            subject ="GENText Registration OTP"
+            message = f"Please Use this OTP to complete your registration process {OTP}"
+            sent_mail_to_user(serializer.data.get('email'),subject,message)
             # token = get_tokens_for_user(user)
             return Response({"msg":"Please Check Your Email. An OTP is Sent To Confirm Your Registration."},status=status.HTTP_200_OK)
     
@@ -89,6 +91,7 @@ class RequestNewOTPView(APIView):
                 user.OTP = OTP
                 user.OTP_generation_time = datetime.now()
                 user.save()
+                sent_mail_to_user(OTP,email)
                 return Response({"msg":"A new OTP sent to your email. Please Check!"},status=status.HTTP_200_OK) 
     
 class UserLoginView(APIView):
