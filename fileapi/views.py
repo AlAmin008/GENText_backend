@@ -8,10 +8,10 @@ from django.db.models import Count, Case, When
 
 def get_pdf_file_status_counts(user_id):
     return PdfFiles.objects.filter(uploaded_by_id=user_id).aggregate(
-        Total = Count('upload_status'),
         Successful= Count(Case(When(upload_status='complete', then=1))),
         Processing= Count(Case(When(upload_status='pending', then=1))),
         Unsuccessful= Count(Case(When(upload_status='incomplete', then=1))), 
+        Total = Count('upload_status')
     )
 
 # Create your views here.
