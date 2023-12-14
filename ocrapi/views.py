@@ -151,7 +151,7 @@ class UploadFileView(APIView):
                 #get file info 
                 result = PdfFiles.objects.filter(pdf_file_name = file_obj.name)
                 if result:
-                    return Response({'msg': 'A file with the same name exist',"file_name":file_obj.name,"similar_file":len(result)}, status=status.HTTP_200_OK)
+                    return Response({'msg': 'A file with the same name exist',"file_name":file_obj.name,"similar_file":len(result)}, status=status.HTTP_406_NOT_ACCEPTABLE)
                 user_instance = User.objects.get(id=26)
                 user_name = user_instance.name
                 obj = store_file(file_obj,file_obj.name,user_instance)
@@ -161,7 +161,7 @@ class UploadFileView(APIView):
             else:
                 return Response({'msg': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({'msg': 'file doesn\'t exist'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'msg': 'file doesn\'t exist'}, status=status.HTTP_204_NO_CONTENT)
         
 
 class UploadSimilarNamedFileView(APIView):

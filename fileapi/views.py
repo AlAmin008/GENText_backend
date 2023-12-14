@@ -8,18 +8,18 @@ from django.db.models import Count, Case, When
 
 def get_pdf_file_status_counts(user_id):
     return PdfFiles.objects.filter(uploaded_by_id=user_id).aggregate(
-        completed=Count(Case(When(upload_status='complete', then=1))),
-        pending=Count(Case(When(upload_status='pending', then=1))),
-        incompleted=Count(Case(When(upload_status='incomplete', then=1)))
+        Successful= Count(Case(When(upload_status='complete', then=1))),
+        Processing= Count(Case(When(upload_status='pending', then=1))),
+        Unsuccessful= Count(Case(When(upload_status='incomplete', then=1))), 
+        Total = Count('upload_status')
     )
-
 
 # Create your views here.
 class UploadedFilesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self,request,uid):
-        files = PdfFiles.objects.filter(uploaded_by=uid)
+        files = PdfFiles.objects.filter(uploaded_by=uid).order_by('-uploaded_date')
         serializer = UploadedFilesSerializer(files,many=True)
         if not files:
             return Response({"msg":"No File Uploaded Yet"},status=status.HTTP_204_NO_CONTENT)
@@ -29,7 +29,7 @@ class UploadedFileDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self,request,file_id):
-        info = PdfDetails.objects.filter(pdf_file_id=file_id)
+        info = PdfDetails.objects.filter(pdf_file_id=file_id).order_by('page_number')
         serializer = UploadedFileDetailSerializer(info,many=True)
         if not info:
             return Response({"msg":"Unable to fetch data"},status=status.HTTP_204_NO_CONTENT)
