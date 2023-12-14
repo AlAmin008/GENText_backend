@@ -9,6 +9,7 @@ from authapi.models import User
 from django.core.mail import send_mail
 from django.conf import settings
 from datetime import datetime,timedelta, timezone
+from django.core.mail import EmailMultiAlternatives
 
 import string, random
 
@@ -21,12 +22,32 @@ def get_new_access_token(refresh_token):
     except:
         return None
 
-def sent_mail_to_user(otp,email):
+def sent_mail_to_user(otp,email,name):
     subject ="GENText Registration OTP"
-    message = f"Please Use this OTP to complete your registration process {otp}"
+    message = f"""<!DOCTYPE html> <html lang='en'><head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Blue and White Card</title>
+</head>
+<body>
+  <table style='width: 100%; max-width: 600px; background-color: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);'>
+    <tr>
+      <td style='padding: 20px; line-height: 1.6; height: 300px; color: #000;'>
+        <!-- Blue-colored card-like div -->
+        <p style='margin-bottom: 0; text-align: center; margin-top: -2em'><img src='https://i.postimg.cc/HjDrbfzM/logo.png' alt='Logo' style='display: block; max-width: 55%; margin: auto;'></p>
+        <p style='text-align: center; color: black;'>Hello, <b>{name}</b></p>
+        <p style='margin-top: 5px;text-align: center; color: black'>Thank you for creating a new account.<br> Here is your 6-digit verification code.</p>
+        <p style='margin-top: 5px; font-size: 24px; font-weight: bold; line-height: 1; vertical-align: middle; text-align: center;'>{otp}</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
     from_email= settings.EMAIL_HOST_USER
     recipient = [email]
-    send_mail(subject=subject,message=message,from_email=from_email,recipient_list=recipient)
+    email_message = EmailMultiAlternatives(subject,message, from_email, recipient)
+    email_message.attach_alternative(message, "text/html")  # Attach HTML content
+    email_message.send()
 
 #generating OTP
 def generate_otp(length=6):
@@ -54,9 +75,7 @@ class UserRegistrationView(APIView):
             OTP = generate_otp()
             serializer.validated_data['OTP'] = OTP
             user=serializer.save()
-            subject ="GENText Registration OTP"
-            message = f"Please Use this OTP to complete your registration process {OTP}"
-            sent_mail_to_user(serializer.data.get('email'),subject,message)
+            sent_mail_to_user(OTP,serializer.data.get('email'))
             # token = get_tokens_for_user(user)
             return Response({"msg":"Please Check Your Email. An OTP is Sent To Confirm Your Registration."},status=status.HTTP_200_OK)
     
@@ -91,7 +110,7 @@ class RequestNewOTPView(APIView):
                 user.OTP = OTP
                 user.OTP_generation_time = datetime.now()
                 user.save()
-                sent_mail_to_user(OTP,email)
+                sent_mail_to_user(OTP,email,user.name)
                 return Response({"msg":"A new OTP sent to your email. Please Check!"},status=status.HTTP_200_OK) 
     
 class UserLoginView(APIView):
