@@ -11,6 +11,8 @@ import os
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser
 from datetime import datetime
+from rest_framework.permissions import IsAuthenticated
+
 
 
 
@@ -104,6 +106,7 @@ def pdf2image(file_path,pdf_file_instance,file_name,user_name):
     else:
         pdf_file_instance.upload_status = 'complete'
     pdf_file_instance.save()
+    return pdf_file_instance.id
     
 
 def store_file(file_obj,file_name,user_instance):
@@ -143,21 +146,22 @@ def store_file(file_obj,file_name,user_instance):
 class UploadFileView(APIView):
 
     parser_classes = (MultiPartParser,)
+    permission_classes = [IsAuthenticated]
 
     def post(self, request,uid, *args, **kwargs):
         file_obj = request.FILES.get('file')
         if file_obj:
             if file_obj.name.lower().endswith(".pdf"):
                 #get file info 
-                result = PdfFiles.objects.filter(pdf_file_name = file_obj.name)
+                result = PdfFiles.objects.filter(pdf_file_name = file_obj.name,id =uid)
                 if result:
-                    return Response({'msg': 'A file with the same name exist',"file_name":file_obj.name,"similar_file":len(result)}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                    return Response({'msg': 'A file with the same name exist',"file_name":file_obj.name}, status=status.HTTP_406_NOT_ACCEPTABLE)
                 user_instance = User.objects.get(id=26)
-                user_name = user_instance.name
+                # user_name = user_instance.name
                 obj = store_file(file_obj,file_obj.name,user_instance)
-                pdf2image(obj["file_path"],obj["pdf_file_instance"],obj["file_name"],user_instance.name)
+                id = pdf2image(obj["file_path"],obj["pdf_file_instance"],obj["file_name"],user_instance.name)
 
-                return Response({'msg': 'File successfully Stored'}, status=status.HTTP_200_OK)
+                return Response({'msg': 'File successfully Stored','id':id}, status=status.HTTP_200_OK)
             else:
                 return Response({'msg': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -166,6 +170,8 @@ class UploadFileView(APIView):
 
 class UploadSimilarNamedFileView(APIView):
     parser_classes = (MultiPartParser,)
+    permission_classes = [IsAuthenticated]
+
 
     def post(self, request,uid, *args, **kwargs):
         file_obj = request.FILES.get('file')
@@ -173,8 +179,8 @@ class UploadSimilarNamedFileView(APIView):
         if file_obj:
             if file_obj.name.lower().endswith(".pdf"):
                 obj = store_file(file_obj,file_obj.name)
-                pdf2image(obj["file_path"],obj["pdf_file_instance"],obj["file_name"])
-                return Response({'msg': 'File successfully Stored'}, status=status.HTTP_200_OK)
+                id = pdf2image(obj["file_path"],obj["pdf_file_instance"],obj["file_name"])
+                return Response({'msg': 'File successfully Stored','id':id}, status=status.HTTP_200_OK)
             else:
                 return Response({'msg': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
         else:

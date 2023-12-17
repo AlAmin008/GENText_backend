@@ -46,7 +46,7 @@ def sent_mail_to_user(otp,email,name):
     from_email= settings.EMAIL_HOST_USER
     recipient = [email]
     email_message = EmailMultiAlternatives(subject,message, from_email, recipient)
-    email_message.attach_alternative(message, "text/html")  # Attach HTML content
+    email_message.attach_alternative(message, "text/html") 
     email_message.send()
 
 #generating OTP
