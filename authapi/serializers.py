@@ -85,11 +85,11 @@ class SendResetEmailSerializer(serializers.Serializer):
         if User.objects.filter(email=email).exists():
             user = User.objects.get(email=email)
             uid = urlsafe_base64_encode(force_bytes(user.id))
-            print('Encoded UID', uid)
+            # print('Encoded UID', uid)
             token = PasswordResetTokenGenerator().make_token(user)
-            print('Password Reset Token', token)
-            link = 'http://localhost:3011/metronic8/react/demo1/auth/reset-password/api/user/reset/'+uid+'/'+token
-            print('Password Reset Link ',link)
+            # print('Password Reset Token', token)
+            link = 'http://localhost:3011/metronic8/react/demo1/auth/set-password/'+uid+'/'+token+'/'
+            # print('Password Reset Link ',link)
             # send email
             subject ="GENText Reset Password Link"
             message = f"Please click the link below to set a new password. {link}"
