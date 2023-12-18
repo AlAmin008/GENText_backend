@@ -75,7 +75,7 @@ class UserRegistrationView(APIView):
             OTP = generate_otp()
             serializer.validated_data['OTP'] = OTP
             user=serializer.save()
-            sent_mail_to_user(OTP,serializer.data.get('email'))
+            sent_mail_to_user(OTP,serializer.data.get('email'),user.name)
             # token = get_tokens_for_user(user)
             return Response({"msg":"Please Check Your Email. An OTP is Sent To Confirm Your Registration."},status=status.HTTP_200_OK)
     
