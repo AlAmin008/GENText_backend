@@ -11,23 +11,27 @@ import os
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser
 from datetime import datetime
-from rest_framework.permissions import IsAuthenticated
-
 
 
 
 
 #extracting text from image
-def text_extraction(image_path):
+def text_extraction(image):
+    image_path = image
     img = cv2.imread(image_path)
+
     # Convert image to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
     #Binarize
     thresh,im_bw=cv2.threshold(gray,200,230,cv2.THRESH_BINARY)
+
     # Configuration for Bengali language
     custom_config = r'-l eng+ben --psm 6'
+
     # Perform OCR
     txt = pytesseract.image_to_string(im_bw, config=custom_config)
+    
     return txt
 
 def pdf2image(file_path,pdf_file_instance,file_name,user_name):
@@ -61,7 +65,7 @@ def pdf2image(file_path,pdf_file_instance,file_name,user_name):
         pil_image.save(image_filename)
 
         #Reducing DPI
-        target_DPI = 25
+        target_DPI = 114
         img = Image.open(image_filename)
         current_dpi = img.info.get("dpi", (72, 72))
         scale_factor = target_DPI / current_dpi[0]
@@ -140,17 +144,16 @@ def store_file(file_obj,file_name,user_instance):
 class UploadFileView(APIView):
 
     parser_classes = (MultiPartParser,)
-    permission_classes = [IsAuthenticated]
 
     def post(self, request,uid, *args, **kwargs):
         file_obj = request.FILES.get('file')
         if file_obj:
             if file_obj.name.lower().endswith(".pdf"):
                 #get file info 
-                result = PdfFiles.objects.filter(pdf_file_name = file_obj.name,id =uid)
+                result = PdfFiles.objects.filter(pdf_file_name = file_obj.name, uploaded_by_id=uid)
                 if result:
-                    return Response({'msg': 'A file with the same name exist',"file_name":file_obj.name}, status=status.HTTP_406_NOT_ACCEPTABLE)
-                user_instance = User.objects.get(id=26)
+                    return Response({'msg': 'A file with the same name exist',"file_name":file_obj.name,"similar_file":len(result)}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                user_instance = User.objects.get(id=uid)
                 # user_name = user_instance.name
                 obj = store_file(file_obj,file_obj.name,user_instance)
                 id = pdf2image(obj["file_path"],obj["pdf_file_instance"],obj["file_name"],user_instance.name)
@@ -164,16 +167,15 @@ class UploadFileView(APIView):
 
 class UploadSimilarNamedFileView(APIView):
     parser_classes = (MultiPartParser,)
-    permission_classes = [IsAuthenticated]
-
 
     def post(self, request,uid, *args, **kwargs):
         file_obj = request.FILES.get('file')
 
         if file_obj:
             if file_obj.name.lower().endswith(".pdf"):
-                obj = store_file(file_obj,file_obj.name)
-                id = pdf2image(obj["file_path"],obj["pdf_file_instance"],obj["file_name"])
+                user_instance = User.objects.get(id=uid)
+                obj = store_file(file_obj,file_obj.name,user_instance)
+                id = pdf2image(obj["file_path"],obj["pdf_file_instance"],obj["file_name"],user_instance.name)
                 return Response({'msg': 'File successfully Stored','id':id}, status=status.HTTP_200_OK)
             else:
                 return Response({'msg': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
