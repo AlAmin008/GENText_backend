@@ -18,22 +18,16 @@ from rest_framework.permissions import IsAuthenticated
 
 
 #extracting text from image
-def text_extraction(image):
-    image_path = image
+def text_extraction(image_path):
     img = cv2.imread(image_path)
-
     # Convert image to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
     #Binarize
     thresh,im_bw=cv2.threshold(gray,200,230,cv2.THRESH_BINARY)
-
     # Configuration for Bengali language
     custom_config = r'-l eng+ben --psm 6'
-
     # Perform OCR
     txt = pytesseract.image_to_string(im_bw, config=custom_config)
-    
     return txt
 
 def pdf2image(file_path,pdf_file_instance,file_name,user_name):

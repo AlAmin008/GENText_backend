@@ -144,8 +144,6 @@ REST_FRAMEWORK = {
 }
 
 # settings.py
-
-TESSDATA_PREFIX = '/tessdata'
 import pytesseract
 pytesseract.pytesseract.tesseract_cmd = 'E:/tappware Task/django Projects/tesseract.exe'
 

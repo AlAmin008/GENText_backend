@@ -2,13 +2,15 @@
 
 To setup this in your pc make sure to install those followings:
 
-- Django
+- Install and setup Django
 - Django REST API (pip install djangorestframework)
 - SimpleJWT (pip install djangorestframework-simplejwt)
+- core headers (pip install django-cors-headers)
 - mysqlclient (pip install mysqlclient)
 - opencv (pip install opencv-python)
-- Downlaod and insstall pytesseract exe (https://github.com/UB-Mannheim/tesseract/wiki)
+- Downlaod and install pytesseract exe (https://github.com/UB-Mannheim/tesseract/wiki)
+- After installing add the path of pytesseract exe in setttings.py
+  {pytesseract.pytesseract.tesseract_cmd = '{your_path}/tesseract.exe'}
 - pytesseract (pip install pytesseract)
-- pytesseract bangla (apt-get install tesseract-ocr-ben)
-- fitz (pip install PyMuPDF)
-- core headers (pip install django-cors-headers)
+- download ben.tessdata from here (https://github.com/tesseract-ocr/tessdata) and place the downloaded file into your installed pytessearct tessdata folder
+- Install PyMuPDF (pip install PyMuPDF)
