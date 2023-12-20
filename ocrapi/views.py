@@ -150,9 +150,9 @@ class UploadFileView(APIView):
         if file_obj:
             if file_obj.name.lower().endswith(".pdf"):
                 #get file info 
-                result = PdfFiles.objects.filter(pdf_file_name = file_obj.name, uploaded_by_id=uid)
+                result = PdfFiles.objects.filter(pdf_file_name = file_obj.name,uploaded_by_id=uid)
                 if result:
-                    return Response({'msg': 'A file with the same name exist',"file_name":file_obj.name,"similar_file":len(result)}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                    return Response({'msg': 'A file with the same name exist',"file_name":file_obj.name}, status=status.HTTP_406_NOT_ACCEPTABLE)
                 user_instance = User.objects.get(id=uid)
                 # user_name = user_instance.name
                 obj = store_file(file_obj,file_obj.name,user_instance)
