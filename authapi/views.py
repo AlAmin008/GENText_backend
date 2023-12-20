@@ -60,10 +60,12 @@ def generate_otp(length=6):
 #generating Manual Token
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
+    access_token_exp = refresh.access_token.payload['exp']
 
     return {
         'refresh': str(refresh),
         'access': str(refresh.access_token),
+        'access_token_exp': access_token_exp
     }
 
 # Create your views here.
@@ -123,7 +125,7 @@ class UserLoginView(APIView):
             user = authenticate(email=email,password=password,is_active=1)
             if user is not None:
                 token = get_tokens_for_user(user)
-                return Response({"token":token,"user":{"id":user.id,"fullname":user.name,"email":user.email,"api_token":token['access']}},status=status.HTTP_200_OK)
+                return Response({"token":token,"user":{"id":user.id,"fullname":user.name,"email":user.email,"api_token":token['access'],"refresh":token['refresh'],"access_token_exp":token['access_token_exp']}},status=status.HTTP_200_OK)
             else:    
                 return Response({"errors":"Email or Password is not valid"},status=status.HTTP_401_UNAUTHORIZED)
 
@@ -132,7 +134,7 @@ class GetUserByTokenView(APIView):
     def post(self, request):
         user = request.user
         serializer = UserProfileSerializer(user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({"id":user.id,"fullname":user.name,"email":user.email}, status=status.HTTP_200_OK)
 
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
