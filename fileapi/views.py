@@ -44,6 +44,7 @@ class RecentUploadedFilesView(APIView):
         if not files:
             return Response({"msg":"No File Uploaded Yet"},status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 class DashBoardView(APIView):
     permission_classes = [IsAuthenticated]
 
