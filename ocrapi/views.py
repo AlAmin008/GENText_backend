@@ -150,7 +150,7 @@ class UploadFileView(APIView):
                 result = PdfFiles.objects.filter(pdf_file_name = file_obj.name,id =uid)
                 if result:
                     return Response({'msg': 'A file with the same name exist',"file_name":file_obj.name}, status=status.HTTP_406_NOT_ACCEPTABLE)
-                user_instance = User.objects.get(id=26)
+                user_instance = User.objects.get(id=uid)
                 # user_name = user_instance.name
                 obj = store_file(file_obj,file_obj.name,user_instance)
                 id = pdf2image(obj["file_path"],obj["pdf_file_instance"],obj["file_name"],user_instance.name)
