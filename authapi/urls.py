@@ -1,8 +1,9 @@
 from django.urls import path
-from authapi.views import UserRegistrationView, UserLoginView,UserProfileView,ChangePasswordView,ResetPasswordEmailView, SaveNewPasswordView,ConfirmOTPView, RequestNewOTPView, ResetPasswordEmailView, GetUserByTokenView
+from authapi.views import UserRegistrationView, UserLoginView,UserProfileView,ChangePasswordView,ResetPasswordEmailView, SaveNewPasswordView,ConfirmOTPView, RequestNewOTPView, ResetPasswordEmailView, GetUserByTokenView, CancleRegistrationView
 
 urlpatterns = [
     path('register/', UserRegistrationView.as_view(),name='register'),
+    path('cancel-registration/', CancleRegistrationView.as_view(),name='register'),
     path('login/', UserLoginView.as_view(),name='login'),
     path('profile/',UserProfileView.as_view(),name='profile'),
     path('change-password/',ChangePasswordView.as_view(),name='changepassword'),

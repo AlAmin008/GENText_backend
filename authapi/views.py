@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
-from authapi.serializers import SaveNewPasswordSerializer, UserRegistrationSerializer,UserLoginSerializer,UserProfileSerializer, ChangePasswordSerializer, SendResetEmailSerializer, ConfirmOTPSerializer, RequestNewOTPSerializer
+from authapi.serializers import SaveNewPasswordSerializer, UserRegistrationSerializer,UserLoginSerializer,UserProfileSerializer, ChangePasswordSerializer, SendResetEmailSerializer, ConfirmOTPSerializer, EmailSerializer
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
@@ -54,7 +54,7 @@ def generate_otp(length=6):
     characters = string.digits
     while True:
         otp = ''.join(random.choice(characters) for _ in range(length))
-        if otp[0]!= 0:
+        if otp[0]!= '0':
             return otp
 
 #generating Manual Token
@@ -101,7 +101,7 @@ class ConfirmOTPView(APIView):
 
 class RequestNewOTPView(APIView):
     def post(self,request):
-        serializer = RequestNewOTPSerializer(data=request.data)
+        serializer = EmailSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
                 email = serializer.data.get('email')
                 try:
@@ -114,7 +114,19 @@ class RequestNewOTPView(APIView):
                 user.save()
                 sent_mail_to_user(OTP,email,user.name)
                 return Response({"msg":"A new OTP sent to your email. Please Check!"},status=status.HTTP_200_OK) 
-    
+
+class CancleRegistrationView(APIView):
+    def post(self,request):
+        serializer = EmailSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+                email = serializer.data.get('email')
+                try:
+                    user = User.objects.get(email=email,is_active=0)
+                    user.delete()
+                except User.DoesNotExist:
+                    return Response({"msg":"User Not Registered or Account Already Activated!"},status=status.HTTP_401_UNAUTHORIZED) 
+                return Response({"msg":"User Info Successfully Deleted"},status=status.HTTP_200_OK) 
+
 class UserLoginView(APIView):
     # renderer_classes=[UserRenderer]
     def post(self,request):
