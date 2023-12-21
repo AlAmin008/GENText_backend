@@ -19,7 +19,7 @@ class UploadedFilesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self,request,uid):
-        files = PdfFiles.objects.filter(uploaded_by=uid).order_by('-uploaded_date')
+        files = PdfFiles.objects.filter(uploaded_by=uid).order_by('-id')
         serializer = UploadedFilesSerializer(files,many=True)
         if not files:
             return Response({"msg":"No File Uploaded Yet"},status=status.HTTP_204_NO_CONTENT)
@@ -39,7 +39,7 @@ class RecentUploadedFilesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self,request,uid):
-        files = PdfFiles.objects.filter(uploaded_by=uid).order_by('-uploaded_date').values()[:5]
+        files = PdfFiles.objects.filter(uploaded_by=uid).order_by('-id').values()[:5]
         serializer = UploadedFilesSerializer(files,many=True)
         if not files:
             return Response({"msg":"No File Uploaded Yet"},status=status.HTTP_204_NO_CONTENT)
