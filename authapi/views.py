@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
-from authapi.serializers import SaveNewPasswordSerializer, UserRegistrationSerializer,UserLoginSerializer,UserProfileSerializer, ChangePasswordSerializer, SendResetEmailSerializer, ConfirmOTPSerializer, EmailSerializer
+from authapi.serializers import SaveNewPasswordSerializer, UserRegistrationSerializer,UserLoginSerializer,UserProfileSerializer, ChangePasswordSerializer, SendResetEmailSerializer, ConfirmOTPSerializer, EmailSerializer,NameSerializer
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
@@ -10,6 +10,8 @@ from django.conf import settings
 from datetime import datetime,timedelta, timezone
 from django.core.mail import EmailMultiAlternatives
 import string, random
+from rest_framework.parsers import MultiPartParser
+import os
 
 
 def get_new_access_token(refresh_token):
@@ -53,6 +55,11 @@ def generate_otp(length=6):
         otp = ''.join(random.choice(characters) for _ in range(length))
         if otp[0]!= '0':
             return otp
+
+def is_image(file_obj):
+    image_extensions = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'webp']
+    extension=file_obj.name.lower().split(".")[-1]
+    return extension in image_extensions
 
 #generating Manual Token
 def get_tokens_for_user(user):
@@ -127,11 +134,15 @@ class UserLoginView(APIView):
     def post(self,request):
         serializer = UserLoginSerializer(data=request.data) 
         if serializer.is_valid(raise_exception=True):
-            email = serializer.data.get('email')
+            login_id = serializer.data.get('login_id')
             password = serializer.data.get('password')
-            user = authenticate(email=email,password=password,is_active=1)
+            user = authenticate(login_id=login_id,password=password,is_active=1)
+            # user = User.objects.get(email=email,password=password,is_active=1)
             if user is not None:
                 token = get_tokens_for_user(user)
+                user.last_login = datetime.now()
+                user.save()
+                print(user.last_login)
                 return Response({"token":token,"user":{"id":user.id,"fullname":user.name,"email":user.email,"api_token":token['access'],"is_admin": user.is_admin}},status=status.HTTP_200_OK)
             else:    
                 return Response({"errors":"Email or Password is not valid"},status=status.HTTP_401_UNAUTHORIZED)
@@ -171,6 +182,61 @@ class SaveNewPasswordView(APIView):
     def post(self,request,uid,token):
         serializer = SaveNewPasswordSerializer(data=request.data,context ={'uid':uid,'token':token}) 
         if serializer.is_valid(raise_exception=True):
-            return Response({"msg":"Password Reset Successfully"},status=status.HTTP_201_CREATED)          
+            return Response({"msg":"Password Reset Successfully"},status=status.HTTP_201_CREATED)    
+
+class ResetNameView(APIView):
+    permission_classes=[IsAuthenticated]
+    def post(self,request,uid):
+        serializer =  NameSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            try:
+                user = User.objects.get(id=uid,is_active=1)
+                new_name = serializer.data.get('new_name')
+                user.name= new_name
+                user.save()
+                return Response({"msg":"Name Successfully Changed"},status=status.HTTP_200_OK)    
+            except User.DoesNotExist:
+                return Response({"errors":"User Doesn't Exist"},status=status.HTTP_401_UNAUTHORIZED) 
+               
+class SetLoginIDView(APIView):
+    permission_classes =[IsAuthenticated]
+    def post(self,request,uid):
+        serializer = NameSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            try:
+                user = User.objects.get(id=uid,is_active=1)
+                new_name = serializer.data.get('new_name')
+                try:
+                    user = User.objects.get(login_id=new_name)
+                    return Response({"msg":"This Login Id Already Exist"},status=status.HTTP_403_FORBIDDEN)    
+                except user.DoesNotExist:
+                    user.login_id= new_name
+                    user.save()
+                    return Response({"msg":"Login Id Successfully Changed"},status=status.HTTP_200_OK)    
+            except User.DoesNotExist:
+                return Response({"errors":"User Doesn't Exist"},status=status.HTTP_401_UNAUTHORIZED) 
+
+class UploadImageView(APIView):
+
+    parser_classes = (MultiPartParser,)
+
+    def post(self, request,uid, *args, **kwargs):
+        file_obj = request.FILES.get('image')
+        if file_obj:
+            if is_image(file_obj):
+                user = User.objects.get(id=uid)
+                folder_path = os.path.join(settings.BASE_DIR, f"media\{user.name}\{file_obj.name}")
+                # Ensure the folder exists, create it if necessary
+                if not os.path.exists(folder_path):
+                    os.makedirs(folder_path)
+                file_path = os.path.join(folder_path,file_obj.name)
+                with open(file_path, 'wb') as destination_file:
+                    for chunk in file_obj.chunks():
+                        destination_file.write(chunk)
+                return Response({'msg': 'Image Successfully Uploaded'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'msg': 'Only Image is Acceptable'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'msg': 'file doesn\'t exist'}, status=status.HTTP_204_NO_CONTENT)
         
-        
+ 

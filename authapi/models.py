@@ -15,7 +15,8 @@ class UserManager(BaseUserManager):
             email=self.normalize_email(email),
             name = name,
             is_active=0,
-            OTP=OTP
+            OTP=OTP,
+            login_id= self.normalize_email(email)
         )
 
         user.set_password(password)
@@ -30,7 +31,8 @@ class UserManager(BaseUserManager):
             email,
             password=password,
             name=name,
-            is_active=1
+            is_active=1,
+            login_id = email
         )
         user.is_admin = True
         user.save(using=self._db)
@@ -44,6 +46,8 @@ class User(AbstractBaseUser):
         unique=True,
     )
     name = models.CharField(max_length=200) 
+    login_id = models.CharField(max_length=255,default=email,unique=True)
+    image = models.CharField(max_length=500,null=True)
     is_active = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
     OTP = models.IntegerField(null=True)
@@ -58,7 +62,7 @@ class User(AbstractBaseUser):
 
     objects = UserManager()
 
-    USERNAME_FIELD = "email"
+    USERNAME_FIELD = "login_id"
     REQUIRED_FIELDS = ['name']
 
     def __str__(self):

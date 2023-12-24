@@ -34,7 +34,7 @@ def text_extraction(image):
     
     return txt
 
-def pdf2image(file_path,pdf_file_instance,file_name,user_name):
+def pdf2text(file_path,pdf_file_instance,file_name,user_name):
 
     incomplete = False
     # Open the PDF file
@@ -130,7 +130,7 @@ def store_file(file_obj,file_name,user_instance):
     total_size=total_size,
     file_location= file_path,
     uploaded_by=user_instance,
-    uploaded_date=datetime.now().date(),
+    uploaded_date=datetime.now().date().strftime("%d-%m-%Y"),
     upload_status='pending',
     )
     #Save the instance to the database
@@ -154,11 +154,10 @@ class UploadFileView(APIView):
                 if result:
                     return Response({'msg': 'A file with the same name exist',"file_name":file_obj.name}, status=status.HTTP_406_NOT_ACCEPTABLE)
                 user_instance = User.objects.get(id=uid)
-                # user_name = user_instance.name
                 obj = store_file(file_obj,file_obj.name,user_instance)
-                id = pdf2image(obj["file_path"],obj["pdf_file_instance"],obj["file_name"],user_instance.name)
+                id = pdf2text(obj["file_path"],obj["pdf_file_instance"],obj["file_name"],user_instance.name)
 
-                return Response({'msg': 'File successfully Stored','id':id}, status=status.HTTP_200_OK)
+                return Response({'msg': 'File successfully Stored','':id}, status=status.HTTP_200_OK)
             else:
                 return Response({'msg': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -175,7 +174,7 @@ class UploadSimilarNamedFileView(APIView):
             if file_obj.name.lower().endswith(".pdf"):
                 user_instance = User.objects.get(id=uid)
                 obj = store_file(file_obj,file_obj.name,user_instance)
-                id = pdf2image(obj["file_path"],obj["pdf_file_instance"],obj["file_name"],user_instance.name)
+                id = pdf2text(obj["file_path"],obj["pdf_file_instance"],obj["file_name"],user_instance.name)
                 return Response({'msg': 'File successfully Stored','id':id}, status=status.HTTP_200_OK)
             else:
                 return Response({'msg': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
