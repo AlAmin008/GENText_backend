@@ -157,7 +157,7 @@ class UploadFileView(APIView):
                 obj = store_file(file_obj,file_obj.name,user_instance)
                 id = pdf2text(obj["file_path"],obj["pdf_file_instance"],obj["file_name"],user_instance.name)
 
-                return Response({'msg': 'File successfully Stored','':id}, status=status.HTTP_200_OK)
+                return Response({'msg': 'File successfully Stored','id':id}, status=status.HTTP_200_OK)
             else:
                 return Response({'msg': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
         else:
