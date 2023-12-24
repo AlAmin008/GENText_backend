@@ -219,6 +219,7 @@ class SetLoginIDView(APIView):
 class UploadImageView(APIView):
 
     parser_classes = (MultiPartParser,)
+    permission_classes=[IsAuthenticated]
 
     def post(self, request,uid, *args, **kwargs):
         file_obj = request.FILES.get('image')
