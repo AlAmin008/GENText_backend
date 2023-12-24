@@ -8,10 +8,10 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import send_mail
 from django.conf import settings
 
-def sent_mail_to_user(email,subject,message):
-    from_email= settings.EMAIL_HOST_USER
-    recipient = [email]
-    send_mail(subject=subject,message=message,from_email=from_email,recipient_list=recipient)
+# def sent_mail_to_user(email,subject,message):
+#     from_email= settings.EMAIL_HOST_USER
+#     recipient = [email]
+#     send_mail(subject=subject,message=message,from_email=from_email,recipient_list=recipient)
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     confirm_password= serializers.CharField(style={'input_type':'password'},write_only=True)
@@ -41,12 +41,15 @@ class ConfirmOTPSerializer(serializers.Serializer):
 class EmailSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=255)
 
+class NameSerializer(serializers.Serializer):
+    new_name = serializers.CharField(min_length=3 , max_length=50)
+
 class UserLoginSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(max_length=255)
+    login_id = serializers.CharField(max_length=255, min_length=5)
     password = serializers.CharField(min_length=8,max_length=50)
     class Meta:
         model = User
-        fields= ['email','password']
+        fields= ['login_id','password']
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:

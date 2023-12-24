@@ -130,7 +130,7 @@ def store_file(file_obj,file_name,user_instance):
     total_size=total_size,
     file_location= file_path,
     uploaded_by=user_instance,
-    uploaded_date=datetime.now().date(),
+    uploaded_date=datetime.now().date().strftime("%d-%m-%Y"),
     upload_status='pending',
     )
     #Save the instance to the database
