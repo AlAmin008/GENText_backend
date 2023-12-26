@@ -26,6 +26,7 @@ class PdfFiles(models.Model):
 
     def __str__(self):
         return f'PdfFile {self.id} - {self.pdf_file_name}'
+    
 
 class PdfDetails(models.Model):
     id = models.AutoField(primary_key=True)
