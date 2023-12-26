@@ -1,7 +1,14 @@
 from django.db import models
 from authapi.models import User
+import datetime
+from django.core.exceptions import ValidationError
 
-     
+def validate_date_format(value):
+    try:
+        datetime.datetime.strptime(value, '%d-%m-%Y')
+    except ValueError:
+        raise ValidationError(('Invalid date format. Use DD-MM-YYYY.'), code='invalid_date_format')
+  
 class PdfFiles(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -15,8 +22,9 @@ class PdfFiles(models.Model):
     total_size = models.FloatField(null=True)
     file_location = models.CharField(max_length=300,null=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
-    uploaded_date = models.DateField(auto_now_add=True)
-    upload_status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    uploaded_date = models.DateField(validators=[validate_date_format])
+    uploaded_time = models.TimeField(null=True)
+    extraction_status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     meta_data = models.TextField( null=True)
     remarks = models.TextField(null=True)
     created_date = models.DateTimeField(auto_now_add=True)

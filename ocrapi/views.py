@@ -156,9 +156,9 @@ def pdf2Image(pdf_file_instance):
 #     pdf_document.close()
 #     pdf_file_instance.total_page = total_page
 #     if incomplete:
-#         pdf_file_instance.upload_status = 'incomplete'
+#         pdf_file_instance.extraction_status = 'incomplete'
 #     else:
-#         pdf_file_instance.upload_status = 'complete'
+#         pdf_file_instance.extraction_status = 'complete'
 #     pdf_file_instance.save()
 #     return pdf_file_instance.id
 
@@ -186,8 +186,9 @@ def store_file(file_obj,file_name,user_instance,random_number):
     total_size=total_size,
     file_location= file_path,
     uploaded_by=user_instance,
-    uploaded_date=datetime.now().date().strftime("%d-%m-%Y"),
-    upload_status='pending',
+    uploaded_date=datetime.today(),
+    uploaded_time = datetime.now().strftime('%H:%M:%S'),
+    extraction_status='pending',
     )
     #Save the instance to the database
     pdf_file_instance.save()
@@ -210,16 +211,16 @@ class UploadFileView(APIView):
                 #get file info 
                 result = PdfFiles.objects.filter(pdf_file_name = file_obj.name,uploaded_by_id=uid)
                 if result:
-                    return Response({'msg': 'A file with the same name exist',"file_name":file_obj.name}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                    return Response({'error': 'A file with the same name exist',"file_name":file_obj.name}, status=status.HTTP_406_NOT_ACCEPTABLE)
                 user_instance = User.objects.get(id=uid)
                 random_number = random.randint(100,999)
                 id = store_file(file_obj,file_obj.name,user_instance,random_number)
                 print(id)
                 return Response({'msg': 'File successfully Stored','id':id}, status=status.HTTP_200_OK)
             else:
-                return Response({'msg': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({'msg': 'file doesn\'t exist'}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'error': 'file doesn\'t exist'}, status=status.HTTP_204_NO_CONTENT)
         
 class Pdf2ImageView(APIView):
     permission_classes=[IsAuthenticated]
@@ -247,9 +248,9 @@ class Image2TextView(APIView):
                 image.save()
             file = PdfFiles.objects.get(id=fileid)
             if incomplete:
-                file.upload_status="incomplete"
+                file.extraction_status="incomplete"
             else:
-                file.upload_status="complete"
+                file.extraction_status="complete"
             file.save()
             return Response({"msg":"Text Extraction Sucessful"},status=status.HTTP_200_OK)
         return Response({'error': 'Pdf to text UnSuccessful'}, status=status.HTTP_400_BAD_REQUEST)
@@ -270,6 +271,6 @@ class UploadSimilarNamedFileView(APIView):
                 id = store_file(file_obj,file_obj.name,user_instance,random_number)
                 return Response({'msg': 'File successfully Stored','id':id}, status=status.HTTP_200_OK)
             else:
-                return Response({'msg': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({'msg': 'file doesn\'t exist'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'file doesn\'t exist'}, status=status.HTTP_400_BAD_REQUEST)

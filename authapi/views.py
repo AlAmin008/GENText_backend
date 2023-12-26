@@ -14,13 +14,13 @@ from rest_framework.parsers import MultiPartParser
 import os
 
 
-def get_new_access_token(refresh_token):
-    try:
-        refresh_token = RefreshToken(refresh_token)
-        new_access_token = str(refresh_token.access_token)
-        return new_access_token
-    except:
-        return None
+# def get_new_access_token(refresh_token):
+#     try:
+#         refresh_token = RefreshToken(refresh_token)
+#         new_access_token = str(refresh_token.access_token)
+#         return new_access_token
+#     except:
+#         return None
 
 def sent_mail_to_user(otp,email,name):
     subject ="GENText Registration OTP"
@@ -65,7 +65,6 @@ def is_image(file_obj):
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
     access_token_exp = refresh.access_token.payload['exp']
-
     return {
         'refresh': str(refresh),
         'access': str(refresh.access_token),
@@ -92,7 +91,7 @@ class ConfirmOTPView(APIView):
             try:
                 user = User.objects.get(email=email)
             except User.DoesNotExist:
-                return Response({"msg":"User Not Registered"},status=status.HTTP_401_UNAUTHORIZED) 
+                return Response({"error":"User Not Registered"},status=status.HTTP_401_UNAUTHORIZED) 
             OTP = serializer.data.get('OTP')  
             print(type(OTP))
             print((user.OTP_generation_time - datetime.now(timezone.utc)))
@@ -100,7 +99,7 @@ class ConfirmOTPView(APIView):
                 user.is_active = 1
                 user.save()
                 return Response({"msg":"Registration Successful"},status=status.HTTP_201_CREATED) 
-            return Response({"msg":"Incorrect OTP or Expired"},status=status.HTTP_401_UNAUTHORIZED) 
+            return Response({"error":"Incorrect OTP or Expired"},status=status.HTTP_401_UNAUTHORIZED) 
 
 class RequestNewOTPView(APIView):
     def post(self,request):
@@ -110,7 +109,7 @@ class RequestNewOTPView(APIView):
                 try:
                     user = User.objects.get(email=email)
                 except User.DoesNotExist:
-                    return Response({"msg":"User Not Registered"},status=status.HTTP_401_UNAUTHORIZED) 
+                    return Response({"error":"User Not Registered"},status=status.HTTP_401_UNAUTHORIZED) 
                 OTP = generate_otp() 
                 user.OTP = OTP
                 user.OTP_generation_time = datetime.now()
@@ -127,7 +126,7 @@ class CancleRegistrationView(APIView):
                 user = User.objects.get(email=email,is_active=0)
                 user.delete()
             except User.DoesNotExist:
-                return Response({"msg":"User Not Registered or Account Already Activated!"},status=status.HTTP_401_UNAUTHORIZED) 
+                return Response({"error":"User Not Registered or Account Already Activated!"},status=status.HTTP_401_UNAUTHORIZED) 
             return Response({"msg":"User Info Successfully Deleted"},status=status.HTTP_200_OK) 
 
 class UserLoginView(APIView):
@@ -137,7 +136,6 @@ class UserLoginView(APIView):
             login_id = serializer.data.get('login_id')
             password = serializer.data.get('password')
             user = authenticate(login_id=login_id,password=password,is_active=1)
-            # user = User.objects.get(email=email,password=password,is_active=1)
             if user is not None:
                 token = get_tokens_for_user(user)
                 user.last_login = datetime.now()
@@ -145,7 +143,7 @@ class UserLoginView(APIView):
                 print(user.last_login)
                 return Response({"token":token,"user":{"id":user.id,"fullname":user.name,"email":user.email,"api_token":token['access'],"is_admin": user.is_admin}},status=status.HTTP_200_OK)
             else:    
-                return Response({"errors":"Email or Password is not valid"},status=status.HTTP_401_UNAUTHORIZED)
+                return Response({"error":"Email or Password is not valid"},status=status.HTTP_401_UNAUTHORIZED)
 
 class GetUserByTokenView(APIView):
 
@@ -155,12 +153,12 @@ class GetUserByTokenView(APIView):
         if serializer.is_valid(raise_exception=True):
             return Response({"id":user.id,"fullname":user.name,"email":user.email}, status=status.HTTP_200_OK)
 
-class UserProfileView(APIView):
-    permission_classes = [IsAuthenticated]
+# class UserProfileView(APIView):
+#     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        serializer = UserProfileSerializer(request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+#     def get(self, request):
+#         serializer = UserProfileSerializer(request.user)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class ChangePasswordView(APIView):
     permission_classes=[IsAuthenticated]
@@ -196,7 +194,7 @@ class ResetNameView(APIView):
                 user.save()
                 return Response({"msg":"Name Successfully Changed"},status=status.HTTP_200_OK)    
             except User.DoesNotExist:
-                return Response({"errors":"User Doesn't Exist"},status=status.HTTP_401_UNAUTHORIZED) 
+                return Response({"error":"User Doesn't Exist"},status=status.HTTP_401_UNAUTHORIZED) 
                
 class SetLoginIDView(APIView):
     permission_classes =[IsAuthenticated]
@@ -214,7 +212,7 @@ class SetLoginIDView(APIView):
                     user.save()
                     return Response({"msg":"Login Id Successfully Changed"},status=status.HTTP_200_OK)    
             except User.DoesNotExist:
-                return Response({"errors":"User Doesn't Exist"},status=status.HTTP_401_UNAUTHORIZED) 
+                return Response({"error":"User Doesn't Exist"},status=status.HTTP_401_UNAUTHORIZED) 
 
 class UploadImageView(APIView):
 
@@ -236,8 +234,8 @@ class UploadImageView(APIView):
                         destination_file.write(chunk)
                 return Response({'msg': 'Image Successfully Uploaded'}, status=status.HTTP_200_OK)
             else:
-                return Response({'msg': 'Only Image is Acceptable'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Only Image is Acceptable'}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({'msg': 'file doesn\'t exist'}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'error': 'file doesn\'t exist'}, status=status.HTTP_204_NO_CONTENT)
         
  
