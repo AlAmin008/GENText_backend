@@ -216,7 +216,7 @@ class UploadFileView(APIView):
                 random_number = random.randint(100,999)
                 id = store_file(file_obj,file_obj.name,user_instance,random_number)
                 print(id)
-                return Response({'msg': 'File successfully Stored','id':id}, status=status.HTTP_200_OK)
+                return Response({'message': 'File successfully Stored','id':id}, status=status.HTTP_200_OK)
             else:
                 return Response({'error': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -228,7 +228,7 @@ class Pdf2ImageView(APIView):
         file = PdfFiles.objects.get(id=fileid)
         if file:
             pdf2Image(file)
-            return Response({'msg': 'Pdf to Image Successful'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Pdf to Image Successful'}, status=status.HTTP_200_OK)
         return Response({'error': 'Pdf to Image UnSuccessful'}, status=status.HTTP_400_BAD_REQUEST)
 
             
@@ -252,7 +252,7 @@ class Image2TextView(APIView):
             else:
                 file.extraction_status="complete"
             file.save()
-            return Response({"msg":"Text Extraction Sucessful"},status=status.HTTP_200_OK)
+            return Response({"message":"Text Extraction Sucessful"},status=status.HTTP_200_OK)
         return Response({'error': 'Pdf to text UnSuccessful'}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -269,7 +269,7 @@ class UploadSimilarNamedFileView(APIView):
                 user_instance = User.objects.get(id=uid)
                 random_number = random.randint(100,999)
                 id = store_file(file_obj,file_obj.name,user_instance,random_number)
-                return Response({'msg': 'File successfully Stored','id':id}, status=status.HTTP_200_OK)
+                return Response({'message': 'File successfully Stored','id':id}, status=status.HTTP_200_OK)
             else:
                 return Response({'error': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
         else:

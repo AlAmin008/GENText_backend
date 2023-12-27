@@ -54,7 +54,7 @@ class UserLoginSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields=['id','name','email']
+        fields=['id']
 
 class ChangePasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField(max_length=50, min_length=8, write_only=True, style={'input_type': 'password'})

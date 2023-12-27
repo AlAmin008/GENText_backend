@@ -7,7 +7,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from authapi.models import User
 from django.conf import settings
-from datetime import datetime,timedelta, timezone
+from datetime import datetime,timedelta
+from django.utils import timezone
 from django.core.mail import EmailMultiAlternatives
 import string, random
 from rest_framework.parsers import MultiPartParser
@@ -81,7 +82,7 @@ class UserRegistrationView(APIView):
             serializer.validated_data['OTP'] = OTP
             user=serializer.save()
             sent_mail_to_user(OTP,serializer.data.get('email'),user.name)
-            return Response({"msg":"Please Check Your Email. An OTP is Sent To Confirm Your Registration."},status=status.HTTP_200_OK)
+            return Response({"message":"Please Check Your Email. An OTP is Sent To Confirm Your Registration."},status=status.HTTP_200_OK)
     
 class ConfirmOTPView(APIView):
     def post(self,request):
@@ -98,7 +99,7 @@ class ConfirmOTPView(APIView):
             if str(user.OTP) == OTP and ((datetime.now(timezone.utc)-user.OTP_generation_time)<= timedelta(minutes=2)):
                 user.is_active = 1
                 user.save()
-                return Response({"msg":"Registration Successful"},status=status.HTTP_201_CREATED) 
+                return Response({"message":"Registration Successful"},status=status.HTTP_201_CREATED) 
             return Response({"error":"Incorrect OTP or Expired"},status=status.HTTP_401_UNAUTHORIZED) 
 
 class RequestNewOTPView(APIView):
@@ -115,7 +116,7 @@ class RequestNewOTPView(APIView):
                 user.OTP_generation_time = datetime.now()
                 user.save()
                 sent_mail_to_user(OTP,email,user.name)
-                return Response({"msg":"A new OTP sent to your email. Please Check!"},status=status.HTTP_200_OK) 
+                return Response({"message":"A new OTP sent to your email. Please Check!"},status=status.HTTP_200_OK) 
 
 class CancleRegistrationView(APIView):
     def post(self,request):
@@ -127,7 +128,7 @@ class CancleRegistrationView(APIView):
                 user.delete()
             except User.DoesNotExist:
                 return Response({"error":"User Not Registered or Account Already Activated!"},status=status.HTTP_401_UNAUTHORIZED) 
-            return Response({"msg":"User Info Successfully Deleted"},status=status.HTTP_200_OK) 
+            return Response({"message":"User Info Successfully Deleted"},status=status.HTTP_200_OK) 
 
 class UserLoginView(APIView):
     def post(self,request):
@@ -135,13 +136,15 @@ class UserLoginView(APIView):
         if serializer.is_valid(raise_exception=True):
             login_id = serializer.data.get('login_id')
             password = serializer.data.get('password')
+            if '@' in login_id:
+                user = User.objects.get(email=login_id)
+                login_id = user.login_id 
             user = authenticate(login_id=login_id,password=password,is_active=1)
             if user is not None:
                 token = get_tokens_for_user(user)
                 user.last_login = datetime.now()
                 user.save()
-                print(user.last_login)
-                return Response({"token":token,"user":{"id":user.id,"fullname":user.name,"email":user.email,"api_token":token['access'],"is_admin": user.is_admin}},status=status.HTTP_200_OK)
+                return Response({"token":token,"user":{"id":user.id,"fullname":user.name,"email":user.email,"api_token":token['access'],"is_admin": user.is_admin,"UserId":user.login_id}},status=status.HTTP_200_OK)
             else:    
                 return Response({"error":"Email or Password is not valid"},status=status.HTTP_401_UNAUTHORIZED)
 
@@ -149,9 +152,9 @@ class GetUserByTokenView(APIView):
 
     def post(self, request):
         user = request.user
-        serializer = UserProfileSerializer(user)
+        serializer = UserProfileSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            return Response({"id":user.id,"fullname":user.name,"email":user.email}, status=status.HTTP_200_OK)
+            return Response({"id":user.id,"fullname":user.name,"email":user.email,"UserId":user.login_id}, status=status.HTTP_200_OK)
 
 # class UserProfileView(APIView):
 #     permission_classes = [IsAuthenticated]
@@ -166,21 +169,21 @@ class ChangePasswordView(APIView):
     def post(self,request):
         serializer = ChangePasswordSerializer(data=request.data,context={'user':request.user})
         if serializer.is_valid(raise_exception=True):
-            return Response({"msg":"Password Changed Successful"},status=status.HTTP_201_CREATED)
+            return Response({"message":"Password Changed Successful"},status=status.HTTP_201_CREATED)
         
 class ResetPasswordEmailView(APIView):
 
     def post(self,request):
         serializer = SendResetEmailSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            return Response({"msg":"Password Reset message sent. Please check your email"},status=status.HTTP_201_CREATED)
+            return Response({"message":"Password Reset message sent. Please check your email"},status=status.HTTP_201_CREATED)
 
 class SaveNewPasswordView(APIView):
 
     def post(self,request,uid,token):
         serializer = SaveNewPasswordSerializer(data=request.data,context ={'uid':uid,'token':token}) 
         if serializer.is_valid(raise_exception=True):
-            return Response({"msg":"Password Reset Successfully"},status=status.HTTP_201_CREATED)    
+            return Response({"message":"Password Reset Successfully"},status=status.HTTP_201_CREATED)    
 
 class ResetNameView(APIView):
     permission_classes=[IsAuthenticated]
@@ -192,7 +195,7 @@ class ResetNameView(APIView):
                 new_name = serializer.data.get('new_name')
                 user.name= new_name
                 user.save()
-                return Response({"msg":"Name Successfully Changed"},status=status.HTTP_200_OK)    
+                return Response({"message":"Name Successfully Changed"},status=status.HTTP_200_OK)    
             except User.DoesNotExist:
                 return Response({"error":"User Doesn't Exist"},status=status.HTTP_401_UNAUTHORIZED) 
                
@@ -204,13 +207,15 @@ class SetLoginIDView(APIView):
             try:
                 user = User.objects.get(id=uid,is_active=1)
                 new_name = serializer.data.get('new_name')
+                if '@' in new_name:
+                    return Response({"error":"This Login Id is not Acceptable"},status=status.HTTP_403_FORBIDDEN)    
                 try:
                     user = User.objects.get(login_id=new_name)
-                    return Response({"msg":"This Login Id Already Exist"},status=status.HTTP_403_FORBIDDEN)    
+                    return Response({"error":"This Login Id Already Exist"},status=status.HTTP_403_FORBIDDEN)    
                 except user.DoesNotExist:
                     user.login_id= new_name
                     user.save()
-                    return Response({"msg":"Login Id Successfully Changed"},status=status.HTTP_200_OK)    
+                    return Response({"message":"Login Id Successfully Changed"},status=status.HTTP_200_OK)    
             except User.DoesNotExist:
                 return Response({"error":"User Doesn't Exist"},status=status.HTTP_401_UNAUTHORIZED) 
 
@@ -232,7 +237,7 @@ class UploadImageView(APIView):
                 with open(file_path, 'wb') as destination_file:
                     for chunk in file_obj.chunks():
                         destination_file.write(chunk)
-                return Response({'msg': 'Image Successfully Uploaded'}, status=status.HTTP_200_OK)
+                return Response({'message': 'Image Successfully Uploaded'}, status=status.HTTP_200_OK)
             else:
                 return Response({'error': 'Only Image is Acceptable'}, status=status.HTTP_400_BAD_REQUEST)
         else:
