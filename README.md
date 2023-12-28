@@ -19,7 +19,7 @@ To setup this in your pc make sure to install those followings:
 #Version
  - django 4.2.4
  - mariadb 15.1
- - django restAPI 3.14.0
+ - django REST framework 3.14.0
  - opencv 4.8.1
  - simpleJWT 5.3.1
  - mysqlclient 2.2.0
