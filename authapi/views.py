@@ -35,7 +35,7 @@ def sent_mail_to_user(otp,email,name):
     <tr>
       <td style='padding: 20px; line-height: 1.6; height: 300px; color: #000;'>
         <!-- Blue-colored card-like div -->
-        <p style='margin-bottom: 0; text-align: center; margin-top: -2em'><img src='https://i.postimg.cc/HjDrbfzM/logo.png' alt='Logo' style='display: block; max-width: 55%; margin: auto;'></p>
+        <p style='margin-bottom: 0; text-align: center; margin-top: -2em'><img src='https://i.postimg.cc/QCXK7MBF/newlogo.png' alt='iGenText Logo' style='display: block; max-width: 55%; margin: auto;'></p>
         <p style='text-align: center; color: black;'>Hello, <b>{name}</b></p>
         <p style='margin-top: 5px;text-align: center; color: black'>Thank you for creating a new account.<br> Here is your 6-digit verification code.</p>
         <p style='margin-top: 5px; font-size: 24px; font-weight: bold; line-height: 1; vertical-align: middle; text-align: center;'>{otp}</p>
