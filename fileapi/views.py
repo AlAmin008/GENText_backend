@@ -8,10 +8,10 @@ from django.db.models import Count, Case, When
 
 def get_pdf_file_status_counts(user_id):
     return PdfFiles.objects.filter(uploaded_by_id=user_id).aggregate(
-        Successful= Count(Case(When(upload_status='complete', then=1))),
-        Processing= Count(Case(When(upload_status='pending', then=1))),
-        Unsuccessful= Count(Case(When(upload_status='incomplete', then=1))), 
-        Total = Count('upload_status')
+        Successful= Count(Case(When(extraction_status='complete', then=1))),
+        Processing= Count(Case(When(extraction_status='pending', then=1))),
+        Unsuccessful= Count(Case(When(extraction_status='incomplete', then=1))), 
+        Total = Count('extraction_status')
     )
 
 # Create your views here.
@@ -22,7 +22,7 @@ class UploadedFilesView(APIView):
         files = PdfFiles.objects.filter(uploaded_by=uid).order_by('-id')
         serializer = UploadedFilesSerializer(files,many=True)
         if not files:
-            return Response({"msg":"No File Uploaded Yet"},status=status.HTTP_204_NO_CONTENT)
+            return Response({"error":"No File Uploaded Yet!"},status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class UploadedFileDetailView(APIView):
@@ -32,7 +32,7 @@ class UploadedFileDetailView(APIView):
         info = PdfDetails.objects.filter(pdf_file_id=file_id).order_by('page_number')
         serializer = UploadedFileDetailSerializer(info,many=True)
         if not info:
-            return Response({"msg":"Unable to fetch data"},status=status.HTTP_204_NO_CONTENT)
+            return Response({"error":"Unable to fetch data"},status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 class RecentUploadedFilesView(APIView):
@@ -42,7 +42,7 @@ class RecentUploadedFilesView(APIView):
         files = PdfFiles.objects.filter(uploaded_by=uid).order_by('-id').values()[:5]
         serializer = UploadedFilesSerializer(files,many=True)
         if not files:
-            return Response({"msg":"No File Uploaded Yet"},status=status.HTTP_204_NO_CONTENT)
+            return Response({"error":"No File Uploaded Yet"},status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class DashBoardView(APIView):
@@ -50,4 +50,7 @@ class DashBoardView(APIView):
 
     def get(self,request,uid):
         result = get_pdf_file_status_counts(uid)
-        return Response({"data":result}, status=status.HTTP_200_OK)
+        if result:
+            return Response({"data":result}, status=status.HTTP_200_OK)
+        return Response({"error":"No File Uploaded Yet"},status=status.HTTP_204_NO_CONTENT)
+        

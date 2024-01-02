@@ -11,13 +11,14 @@ import os
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser
 from datetime import datetime
+import random
+from rest_framework.permissions import IsAuthenticated
 
 
 
 
 #extracting text from image
-def text_extraction(image):
-    image_path = image
+def text_extraction(image_path):
     img = cv2.imread(image_path)
 
     # Convert image to grayscale
@@ -34,13 +35,10 @@ def text_extraction(image):
     
     return txt
 
-def pdf2text(file_path,pdf_file_instance,file_name,user_name):
+def pdf2Image(pdf_file_instance):
 
-    incomplete = False
     # Open the PDF file
-    pdf_document = fitz.open(file_path)
-  
-
+    pdf_document = fitz.open(pdf_file_instance.file_location)
     total_page = 0
     # Loop through each page in the PDF
     for page_number in range(pdf_document.page_count):
@@ -52,9 +50,9 @@ def pdf2text(file_path,pdf_file_instance,file_name,user_name):
 
         # Create a Pillow (PIL) image from the PyMuPDF image
         pil_image = Image.frombytes("RGB", [image.width, image.height], image.samples)
-
-        
-        folder_path = os.path.join(settings.BASE_DIR, f"media\{user_name}\{file_name}\pdf_Image")
+        # file = 
+        path = pdf_file_instance.file_location.rsplit('\\', 1)[0]
+        folder_path = os.path.join(settings.BASE_DIR, f"{path}\pdf_Image")
 
         # Ensure the folder exists, create it if necessary
         if not os.path.exists(folder_path):
@@ -78,48 +76,106 @@ def pdf2text(file_path,pdf_file_instance,file_name,user_name):
         img_rgb = img_8bit.convert("RGB")
         img_rgb.save(image_filename,format="JPEG", dpi = (target_DPI,target_DPI))
 
-        # print(folder_path)
-        
-        result = text_extraction(image_filename)
-       
-        if not result:
-            incomplete = True
-
         file_instance = pdf_file_instance
 
         pdf_details_instance= PdfDetails(
-        pdf_file_id_id= file_instance.id,
+        pdf_file_id_id= pdf_file_instance.id,
         page_number= page_number+1,
         image_location = image_filename,
-        text = result
+        text = ""
         )
         pdf_details_instance.save()
 
     # Close the PDF document
-    
     pdf_document.close()
     pdf_file_instance.total_page = total_page
-    if incomplete:
-        pdf_file_instance.upload_status = 'incomplete'
-    else:
-        pdf_file_instance.upload_status = 'complete'
     pdf_file_instance.save()
-    return pdf_file_instance.id
     
 
-def store_file(file_obj,file_name,user_instance):
+# def pdf2text(pdf_file_instance):
+
+#     incomplete = False
+#     # Open the PDF file
+#     pdf_document = fitz.open(pdf_file_instance.file_location)
+#     total_page = 0
+#     # Loop through each page in the PDF
+#     for page_number in range(pdf_document.page_count):
+#         page = pdf_document.load_page(page_number)
+#         total_page +=1
+
+#         # Convert the page to an image
+#         image = page.get_pixmap(matrix=fitz.Matrix(300 / 72, 300 / 72))
+
+#         # Create a Pillow (PIL) image from the PyMuPDF image
+#         pil_image = Image.frombytes("RGB", [image.width, image.height], image.samples)
+#         # file = 
+#         path = pdf_file_instance.file_location.rsplit('\\', 1)[0]
+#         folder_path = os.path.join(settings.BASE_DIR, f"{path}\pdf_Image")
+
+#         # Ensure the folder exists, create it if necessary
+#         if not os.path.exists(folder_path):
+#             os.makedirs(folder_path)
+
+#         # Construct the complete file path with the folder
+#         image_filename = os.path.join(folder_path, f"page_{page_number+1}.jpg")
+#         pil_image.save(image_filename)
+
+#         #Reducing DPI
+#         target_DPI = 114
+#         img = Image.open(image_filename)
+#         current_dpi = img.info.get("dpi", (72, 72))
+#         scale_factor = target_DPI / current_dpi[0]
+#         new_size = tuple(int(dim * scale_factor) for dim in img.size)
+#         resized_img_dpi = img.resize(new_size)
+#         # resized_img_dpi.save(name,format="JPEG",dpi=(target_DPI,target_DPI))
+
+#         # Reduce BPP
+#         img_8bit = resized_img_dpi.convert("P", palette=Image.ADAPTIVE, colors=256)
+#         img_rgb = img_8bit.convert("RGB")
+#         img_rgb.save(image_filename,format="JPEG", dpi = (target_DPI,target_DPI))
+
+#         # print(folder_path)
+        
+#         result = text_extraction(image_filename)
+       
+#         if not result:
+#             incomplete = True
+
+#         file_instance = pdf_file_instance
+
+#         pdf_details_instance= PdfDetails(
+#         pdf_file_id_id= file_instance.id,
+#         page_number= page_number+1,
+#         image_location = image_filename,
+#         text = result
+#         )
+#         pdf_details_instance.save()
+
+#     # Close the PDF document
     
-    folder_path = os.path.join(settings.BASE_DIR, f"media\{user_instance.name}\{file_name}")
+#     pdf_document.close()
+#     pdf_file_instance.total_page = total_page
+#     if incomplete:
+#         pdf_file_instance.extraction_status = 'incomplete'
+#     else:
+#         pdf_file_instance.extraction_status = 'complete'
+#     pdf_file_instance.save()
+#     return pdf_file_instance.id
+
+def store_file(file_obj,file_name,user_instance,random_number):
+    folder = f"{random_number}{file_name}"
+    folder_path = os.path.join(settings.BASE_DIR, f"media\{user_instance.name}\{folder}")
     # Ensure the folder exists, create it if necessary
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
 
-    file_path = os.path.join(folder_path,file_name)
-
+    
+    file_path = os.path.join(folder_path,f"{random_number}{file_name}")
+    print(file_path)
     with open(file_path, 'wb') as destination_file:
         for chunk in file_obj.chunks():
             destination_file.write(chunk)
-                
+    print(file_path)
     total_size = os.path.getsize(file_path)
     total_size = round (total_size/1024,2)
     # adding file in database 
@@ -130,12 +186,13 @@ def store_file(file_obj,file_name,user_instance):
     total_size=total_size,
     file_location= file_path,
     uploaded_by=user_instance,
-    uploaded_date=datetime.now().date().strftime("%d-%m-%Y"),
-    upload_status='pending',
+    uploaded_date=datetime.today(),
+    uploaded_time = datetime.now().strftime('%H:%M:%S'),
+    extraction_status='pending',
     )
     #Save the instance to the database
     pdf_file_instance.save()
-    return {"file_path":file_path,"file_name":file_name,"pdf_file_instance":pdf_file_instance}
+    return pdf_file_instance.id
 
 
 # Create your views here.
@@ -144,6 +201,8 @@ def store_file(file_obj,file_name,user_instance):
 class UploadFileView(APIView):
 
     parser_classes = (MultiPartParser,)
+    permission_classes=[IsAuthenticated]
+
 
     def post(self, request,uid, *args, **kwargs):
         file_obj = request.FILES.get('file')
@@ -152,20 +211,55 @@ class UploadFileView(APIView):
                 #get file info 
                 result = PdfFiles.objects.filter(pdf_file_name = file_obj.name,uploaded_by_id=uid)
                 if result:
-                    return Response({'msg': 'A file with the same name exist',"file_name":file_obj.name}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                    return Response({'error': 'A file with the same name exist',"file_name":file_obj.name}, status=status.HTTP_406_NOT_ACCEPTABLE)
                 user_instance = User.objects.get(id=uid)
-                obj = store_file(file_obj,file_obj.name,user_instance)
-                id = pdf2text(obj["file_path"],obj["pdf_file_instance"],obj["file_name"],user_instance.name)
-
-                return Response({'msg': 'File successfully Stored','id':id}, status=status.HTTP_200_OK)
+                random_number = random.randint(100,999)
+                id = store_file(file_obj,file_obj.name,user_instance,random_number)
+                print(id)
+                return Response({'message': 'File successfully Stored','id':id}, status=status.HTTP_200_OK)
             else:
-                return Response({'msg': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({'msg': 'file doesn\'t exist'}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'error': 'file doesn\'t exist'}, status=status.HTTP_204_NO_CONTENT)
         
+class Pdf2ImageView(APIView):
+    permission_classes=[IsAuthenticated]
+    def post(self,request,fileid):
+        file = PdfFiles.objects.get(id=fileid)
+        if file:
+            pdf2Image(file)
+            return Response({'message': 'Pdf to Image Successful'}, status=status.HTTP_200_OK)
+        return Response({'error': 'Pdf to Image UnSuccessful'}, status=status.HTTP_400_BAD_REQUEST)
+
+            
+class Image2TextView(APIView):
+    permission_classes=[IsAuthenticated]
+    def post(self,request,fileid):
+        images = PdfDetails.objects.filter(pdf_file_id=fileid)
+        incomplete = False
+        print(images)
+        if images:
+            for image in images:
+                extracted_text = text_extraction(image.image_location)
+                print(extracted_text)
+                if not extracted_text:
+                    incomplete = True
+                image.text=extracted_text
+                image.save()
+            file = PdfFiles.objects.get(id=fileid)
+            if incomplete:
+                file.extraction_status="incomplete"
+            else:
+                file.extraction_status="complete"
+            file.save()
+            return Response({"message":"Text Extraction Sucessful"},status=status.HTTP_200_OK)
+        return Response({'error': 'Pdf to text UnSuccessful'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class UploadSimilarNamedFileView(APIView):
     parser_classes = (MultiPartParser,)
+    permission_classes=[IsAuthenticated]
+
 
     def post(self, request,uid, *args, **kwargs):
         file_obj = request.FILES.get('file')
@@ -173,10 +267,10 @@ class UploadSimilarNamedFileView(APIView):
         if file_obj:
             if file_obj.name.lower().endswith(".pdf"):
                 user_instance = User.objects.get(id=uid)
-                obj = store_file(file_obj,file_obj.name,user_instance)
-                id = pdf2text(obj["file_path"],obj["pdf_file_instance"],obj["file_name"],user_instance.name)
-                return Response({'msg': 'File successfully Stored','id':id}, status=status.HTTP_200_OK)
+                random_number = random.randint(100,999)
+                id = store_file(file_obj,file_obj.name,user_instance,random_number)
+                return Response({'message': 'File successfully Stored','id':id}, status=status.HTTP_200_OK)
             else:
-                return Response({'msg': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Please Provide PDf files only'}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({'msg': 'file doesn\'t exist'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'file doesn\'t exist'}, status=status.HTTP_400_BAD_REQUEST)
